@@ -1,0 +1,12 @@
+description: FreeRADIUS Bundle
+bundle: kubernetes
+applications:
+  freeradius:
+    charm: './charms/freeradius-k8s'
+    scale: 1
+  mariadb-k8s:
+    charm: 'cs:~karimsye/mariadb-k8s-charmed-osm-2'
+    scale: 1
+relations:
+  - - 'freeradius-k8s:mysql'
+    - 'mariadb-k8s:mysql'
