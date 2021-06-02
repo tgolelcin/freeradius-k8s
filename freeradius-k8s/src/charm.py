@@ -29,6 +29,7 @@ class FreeradiusK8SCharm(CharmBase):
     """Charm the service."""
 
     state = StoredState()
+    mysql = "localhost"
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -45,10 +46,19 @@ class FreeradiusK8SCharm(CharmBase):
         # Relation hooks
         self.framework.observe(self.on.mysql_relation_changed, self._on_mysql_relation_changed)
 
+    
     def _on_mysql_relation_changed(self, event):
         # TODO
-        return
+        #self.mysql = event.params["host"]
+        self.mysql = event.relation.data[event.unit].get("host")
+        self.model.unit.status = MaintenanceStatus(f"Received DB IP:{self.mysql}")
+        
+        if(self.mysql != None):
+            self._apply_spec()
+        
+        self.model.unit.status = ActiveStatus(f"Received DB IP:{self.mysql}")
 
+    
     def _apply_spec(self):
         # Only apply the spec if this unit is a leader.
         if not self.framework.model.unit.is_leader():
@@ -76,17 +86,62 @@ class FreeradiusK8SCharm(CharmBase):
         ]
 
         spec = {
-            "version": 2,
+            "version": 3,
             "containers": [
                 {
                     "name": self.framework.model.app.name,
                     "image": "{}".format(config["image"]),
                     "ports": ports,
+                    "envConfig": { # Environment variables that wil be passed to the container
+                        "RADIUS_DB_HOST": self.mysql,
+                        "RADIUS_DB_PORT": "3306",
+                        "RADIUS_DB_USERNAME": "root",
+                        "RADIUS_DB_PASSWORD": "root",
+                        "RADIUS_SQL": "true",
+                        "RADIUS_DB_NAME": "database",
+                    }
+
                 }
             ],
         }
 
         return spec
+
+    '''
+    def _apply_spec(self):
+
+        config = self.framework.model.config
+
+        ports = [
+            {
+                "name": "port-1",
+                "containerPort": config["port-1"],
+                "protocol": "UDP",
+            },
+            {
+                "name": "port-2",
+                "containerPort": config["port-2"],
+                "protocol": "UDP",
+            }
+        ]
+
+        spec = {
+            "version": 3,
+            "containers": [
+                {
+                    "name": self.framework.model.app.name,
+                    "image": "{}".format(config["image"]),
+                    "ports": ports,
+                    "envConfig": { # Environment variables that wil be passed to the container
+                        "DB_HOST": self.mysql,
+                        "DB_PORT": "3306",
+                    }
+
+                }
+            ],
+        }
+        self.model.pod.set_spec(spec)
+    '''
 
     def _on_config_changed(self, event):
         """Handle changes in configuration"""
