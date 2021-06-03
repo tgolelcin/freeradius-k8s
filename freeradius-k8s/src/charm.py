@@ -13,6 +13,7 @@ develop a new k8s charm using the Operator Framework:
 """
 
 import logging
+import subprocess
 
 from ops.charm import CharmBase
 from ops.framework import StoredState
@@ -52,11 +53,13 @@ class FreeradiusK8SCharm(CharmBase):
         #self.mysql = event.params["host"]
         self.mysql = event.relation.data[event.unit].get("host")
         self.model.unit.status = MaintenanceStatus(f"Received DB IP:{self.mysql}")
+        #self.model.unit.status = MaintenanceStatus("Received DB IP")
         
         if(self.mysql != None):
             self._apply_spec()
         
         self.model.unit.status = ActiveStatus(f"Received DB IP:{self.mysql}")
+        #self.model.unit.status = ActiveStatus("Received DB IP")
 
     
     def _apply_spec(self):
@@ -91,6 +94,7 @@ class FreeradiusK8SCharm(CharmBase):
                 {
                     "name": self.framework.model.app.name,
                     "image": "{}".format(config["image"]),
+                    "imagePullPolicy": "Never",
                     "ports": ports,
                     "envConfig": { # Environment variables that wil be passed to the container
                         "RADIUS_DB_HOST": self.mysql,
@@ -100,48 +104,11 @@ class FreeradiusK8SCharm(CharmBase):
                         "RADIUS_SQL": "true",
                         "RADIUS_DB_NAME": "database",
                     }
-
                 }
             ],
         }
 
         return spec
-
-    '''
-    def _apply_spec(self):
-
-        config = self.framework.model.config
-
-        ports = [
-            {
-                "name": "port-1",
-                "containerPort": config["port-1"],
-                "protocol": "UDP",
-            },
-            {
-                "name": "port-2",
-                "containerPort": config["port-2"],
-                "protocol": "UDP",
-            }
-        ]
-
-        spec = {
-            "version": 3,
-            "containers": [
-                {
-                    "name": self.framework.model.app.name,
-                    "image": "{}".format(config["image"]),
-                    "ports": ports,
-                    "envConfig": { # Environment variables that wil be passed to the container
-                        "DB_HOST": self.mysql,
-                        "DB_PORT": "3306",
-                    }
-
-                }
-            ],
-        }
-        self.model.pod.set_spec(spec)
-    '''
 
     def _on_config_changed(self, event):
         """Handle changes in configuration"""
@@ -166,7 +133,16 @@ class FreeradiusK8SCharm(CharmBase):
     def _on_custom_action(self, event):
         """Define an action"""
         # TODO
-        return
+        filename = event.params["customparam"]
+        cmd = 'touch '+str(filename)
+        try:
+            #subprocess.run(cmd, shell=True)
+            subprocess.run(["touch", filename], cwd="/root")
+            event.set_results({
+                    "output": f"File {filename} created successfully"
+                    })
+        except Exception as e:
+            event.fail(f"Touch action failed with the following exception: {e}")
 
 
 if __name__ == "__main__":
