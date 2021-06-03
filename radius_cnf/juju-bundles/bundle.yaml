@@ -1,0 +1,9 @@
+description: Radius Bundle
+bundle: kubernetes
+applications:
+  radius:
+    charm: ./charms/radius-operator
+    scale: 1
+  mysql:
+    charm: ./charms/mysql-operator
+    scale: 1

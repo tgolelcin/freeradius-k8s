@@ -1,0 +1,34 @@
+vnfd:
+  product-name: radius_cnf
+  version: "1.0"
+  provider: onboarding-freeradius-cnf-team1
+  description: |
+    K8s container deployment of Radius
+  id: radius_cnf
+  mgmt-cp: mgmtnet-ext
+  ext-cpd:
+    - id: mgmtnet-ext
+      k8s-cluster-net: mgmtnet
+  kdu:
+    - name: radius-kdu
+      juju-bundle: bundle.yaml
+    - name: mysql-kdu
+      juju-bundle: bundle.yaml
+  k8s-cluster:
+    nets:
+      - id: mgmtnet
+  df:
+    - id: default-df
+      lcm-operations-configuration:
+        operate-vnf-op-config:
+          day1-2:
+            - id: radius-kdu
+              config-primitive:
+                - name: adduser
+                  parameter:
+                    - name: username
+                      data-type: STRING
+                      default-value: "test"
+                    - name: password
+                      data-type: STRING
+                      default-value: "radius"
