@@ -12,8 +12,6 @@ vnfd:
   kdu:
     - name: radius-kdu
       juju-bundle: bundle.yaml
-    - name: mysql-kdu
-      juju-bundle: bundle.yaml
   k8s-cluster:
     nets:
       - id: mgmtnet
@@ -26,9 +24,12 @@ vnfd:
               config-primitive:
                 - name: adduser
                   parameter:
+                    - name: application-name
+                      data-type: STRING
+                      default-value: radius
                     - name: username
                       data-type: STRING
-                      default-value: "test"
+                      default-value: ""
                     - name: password
                       data-type: STRING
-                      default-value: "radius"
+                      default-value: ""
